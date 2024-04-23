@@ -168,7 +168,10 @@ for i = 1:length(env)
 end
 
 for i = 1:size(interpStates,1)
-    show(ur5e,interpStates(i,:),"PreservePlot", false,"Visuals","off","Collisions","on");
+    show(ur5e,interpStates(i,:),...
+         "PreservePlot", false,...
+         "Visuals","off",...
+         "Collisions","on");
     title("Plan 5: Place the Can")
     drawnow;
     if i == (size(interpStates,1))
