@@ -3,7 +3,7 @@ rosshutdown
 rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
  [ur5e,config,env] = exampleHelperLoadPickAndPlaceRRT;
 
-%% Define ops dictionary
+%% Define ops dictionary and Load Gazebo and obtain poses
   ops = dictionary();                % Type of global dictionary with all options to facilitate passing of options
     ops("debug")               = 0;     % If set to true visualize traj before running  
     ops("toolFlag")            = 0;     % Include rigidly attached robotiq fingers
@@ -11,7 +11,6 @@ rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
     ops("z_offset")            = 0.3;   % Vertical offset for top-down approach
     ops("traj_duration")       = 3;     % Traj duration (secs) 
 
-    %% Load Gazebo and obtain poses
 goHome('qr')
 resetWorld
 disp('Getting Robot and gCan1 Pose...')
@@ -47,10 +46,12 @@ startConfig = get_current_joint_states;
 goalConfig = mat_joint_traj;
 rng('default');
 path = plan(planner,startConfig,goalConfig);
-%% Visualize Path
 
 interpStates = interpolate(planner, path);
 [interpStateTraj,c] = size(interpStates);
+
+%% Visualize Path
+
 if ops('debug')
     for i = 1:interpStateTraj
         show(ur5e, interpStates(i,:),...
@@ -61,23 +62,21 @@ if ops('debug')
         drawnow;
     end
 end
-%% %% 4. Create action client, message, populate ROS trajectory goal and send
-    % Instantiate the 
+%% 4. Create action client, message, populate ROS trajectory goal and send
+ % Instantiate the 
     pick_traj_act_client = rosactionclient('/pos_joint_traj_controller/follow_joint_trajectory',...
                                            'control_msgs/FollowJointTrajectory', ...
                                            'DataFormat', 'struct');
     
-    % Create action goal message from client
+ % Create action goal message from client
     traj_goal = rosmessage(pick_traj_act_client); 
-    %% Testing if setting FeedbackFcn to 0 minimizes the loss connection
+
+ % Testing if setting FeedbackFcn to 0 minimizes the loss connection
     pick_traj_act_client.FeedbackFcn = [];     
     
-    % Convert to trajectory_msgs/FollowJointTrajectory
+ % Convert to trajectory_msgs/FollowJointTrajectory
     disp('Converting to JointTrajectory format...');
-    % [num_configs,~]=size(interpStates);
 
-    
-% for i = 1:num_configs\
     [numSteps, ~] = size(path); % interpStates
     
     traj_goal = convert2ROSPointVec(path, ...
@@ -86,7 +85,7 @@ end
                                     ops('traj_duration'), ...
                                     traj_goal); % Consider passing in ops directly
     
-    % Finally send ros trajectory with traj_steps
+ % Finally send ros trajectory with traj_steps
     disp('Sending traj to action server...')
     if waitForServer(pick_traj_act_client)
         disp('Connected to action server. Sending goal...')
@@ -98,6 +97,37 @@ end
     end 
     
     traj_result = traj_result.ErrorCode;
+ %%  Create action client for gripper
+ grip_action_client = rosactionclient('/gripper_controller/follow_joint_trajectory', ...
+                                          'control_msgs/FollowJointTrajectory',...
+                                          'DataFormat','struct');
+    
+ % Create a gripper goal action message
+    grip_msg = rosmessage(grip_action_client);
+
+ % Testing if setting FeedbackFcn to 0 minimizes the loss connection
+    grip_action_client.FeedbackFcn = []; 
+
+ % Set Grip Pos by default to pick / close gripper
+ % gripPos = 0.227; 
+    gripPos = 0.23; % 0.225 for upright cans tends to slip. 
+
+ % Pack gripper information intro ROS message
+    grip_goal = packGripGoal_struct(gripPos,grip_msg);
+
+    %% Send action goal
+    disp('Sending grip goal...');
+
+     if waitForServer(grip_action_client)
+        disp('Connected to action server. Sending goal...')
+        [res,state,status] = sendGoalAndWait(grip_action_client,grip_goal);
+    else
+        % Re-attempt
+        disp('First try failed... Trying again...');
+        [res,state,status] = sendGoalAndWait(grip_action_client,grip_goal);
+    end    
+
+
 
 %% Attach Can to the end effector
 % Create can as a rigid body
@@ -123,15 +153,15 @@ addBody(ur5e,canBody,"wrist_3_link");
 env(10) = [];
 
 %% Specify Goal COnfig and create the RRT Planner
+
 goalConfig = [2.19, 0.37, 1.76, -2.13, 0.00, 0.62];
-planner.EnableConnectHeuristic = false;
+% planner.EnableConnectHeuristic = false;
 path = plan(planner,startConfig,goalConfig);
 
 interpStates = interpolate(planner,path);
 [interpStateTraj,~] = size(interpStates);
 hold off
 %% visualize
-% 
 if ops('debug')
     show(ur5e,config,"Visuals","off","Collisions","on");
     hold on
@@ -149,26 +179,9 @@ if ops('debug')
         end
     end
 end
-%% %%  Create action client for gripper
- grip_action_client = rosactionclient('/gripper_controller/follow_joint_trajectory', ...
-                                          'control_msgs/FollowJointTrajectory',...
-                                          'DataFormat','struct');
-    
-    % Create a gripper goal action message
-    grip_msg = rosmessage(grip_action_client);
 
 
-%%  %% Testing if setting FeedbackFcn to 0 minimizes the loss connection
-    grip_action_client.FeedbackFcn = []; 
-
-    %% Set Grip Pos by default to pick / close gripper
-    % gripPos = 0.227; 
-    gripPos = 0.23; % 0.225 for upright cans tends to slip. 
-
-    %% Pack gripper information intro ROS message
-    grip_goal = packGripGoal_struct(gripPos,grip_msg);
-
-    %% Send action goal
+%% Send action goal
     disp('Sending grip goal...');
 
      if waitForServer(grip_action_client)
@@ -181,9 +194,9 @@ end
     end    
 
 
-      %% Send Path to traj_goal
+%% Send Path to traj_goal
  
-      % Convert to trajectory_msgs/FollowJointTrajectory
+% Convert to trajectory_msgs/FollowJointTrajectory
     disp('Converting to JointTrajectory format...');
 
      [numSteps, ~] = size(path); % interpStates
@@ -194,7 +207,7 @@ end
                                     ops('traj_duration'), ...
                                     traj_goal); % Consider passing in ops directly
     
-    % Finally send ros trajectory with traj_steps
+ % Finally send ros trajectory with traj_steps
     disp('Sending traj to action server...')
     if waitForServer(pick_traj_act_client)
         disp('Connected to action server. Sending goal...')
@@ -207,14 +220,14 @@ end
 
     traj_result = traj_result.ErrorCode;
 
-    %% Set Grip Pos by default to pick / close gripper
+%% Set Grip Pos by default to pick / close gripper
     gripPos = 0; % 0.225 for upright cans tends to slip. 
 
 
-    %% Pack gripper information intro ROS message
+   % Pack gripper information intro ROS message
     grip_goal = packGripGoal_struct(gripPos,grip_msg);
 
-    %% Send action goal
+%% Send action goal
     disp('Sending grip goal...');
 
      if waitForServer(grip_action_client)
