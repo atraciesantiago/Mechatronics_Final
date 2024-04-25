@@ -214,6 +214,7 @@ end
    % Pack gripper information intro ROS message
     grip_goal = packGripGoal_struct(gripPos,grip_msg);
 
+
 %% Send action goal
     disp('Sending grip goal...');
 
@@ -1366,6 +1367,10 @@ end
 %% Return to the ready Position for next object
 goHome('qr')
 %% Picking Up Pouches
+rosshutdown
+rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
+ [ur5e,config,env] = exampleHelperLoadPickAndPlaceRRT;
+ %% 
 
 disp('Getting Robot and pouch1 Pose...')
     type = 'gazebo';                            % type can be manual, gazebo, cam, ptcloud
@@ -2262,6 +2267,11 @@ end
      %% Return to the ready Position for next object
 goHome('qr')
 %% Bottles Laying Down
+rosshutdown
+rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
+ [ur5e,config,env] = exampleHelperLoadPickAndPlaceRRT;
+ %% 
+
 % disp('Getting Robot and rBottle1 Pose...')
     type = 'gazebo';                            % type can be manual, gazebo, cam, ptcloud
     strcmp(type,'gazebo')                       % string compare 
@@ -2513,7 +2523,7 @@ disp('Getting Robot and rBottle2 Pose...')
 mat_R_T_M(3,4)=mat_R_T_M(3,4)-0.025; %for laying down cans
 mat_traj = mat_R_T_M;
 [mat_joint_traj,rob_joint_names] = convertPoseTraj2JointTraj(ur5e,mat_traj,ops('toolFlag'));
-mat_joint_traj(6) = 1.57;
+ mat_joint_traj(6) = 1.57;
 planner = manipulatorRRT(ur5e, env);
 planner.SkippedSelfCollisions='parent';
 planner.MaxConnectionDistance = 0.3;
@@ -2706,6 +2716,11 @@ end
 %% Return to the ready Position for next object
 goHome('qr')
 %% Standing Bottles
+rosshutdown
+rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
+ [ur5e,config,env] = exampleHelperLoadPickAndPlaceRRT;
+ %% 
+
 % disp('Getting Robot and yBottle3 Pose...')
     type = 'gazebo';                            % type can be manual, gazebo, cam, ptcloud
     strcmp(type,'gazebo')                       % string compare 
@@ -3150,7 +3165,8 @@ end
     end    
 %% Return to the ready Position for next object
 goHome('qz')
-%% Load Robot, rosshutdown, rosinit
+%% 
+% Load Robot, rosshutdown, rosinit
 rosshutdown
 rosinit('192.168.118.128',11311,"NodeHost",'192.168.118.1')
  [ur5e,config,env] = exampleHelperLoadPickAndPlaceRRT;
