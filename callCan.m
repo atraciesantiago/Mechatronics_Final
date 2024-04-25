@@ -1,4 +1,4 @@
-function callObject(model_name, env, ur5e, config)
+function callCan(model_name, env, ur5e, config)
 
 %% Define ops dictionary and Load Gazebo and obtain poses
   ops = dictionary();                % Type of global dictionary with all options to facilitate passing of options
@@ -131,8 +131,8 @@ end
 
 %% Attach Can to the end effector
 % Create can as a rigid body
-for j = 10:1:length(env)
-object_model = env{j};
+
+object_model = env{10};
 objectBody = rigidBody("myObject");
 objectJoint = rigidBodyJoint("objectJoint");
 
@@ -151,7 +151,7 @@ objectBody.Joint = objectJoint;
 addBody(ur5e,objectBody,"wrist_3_link");
 
 % Remove object from environment.
-env(j) = [];
+env(10) = [];
 
 pause(2);
 
@@ -232,5 +232,4 @@ end
     end    
 %% Return to the ready Position for next object
 goHome('qr')
-end
 end

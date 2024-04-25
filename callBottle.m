@@ -1,4 +1,4 @@
-function callObject(model_name, env, ur5e, config)
+function callBottle(model_name, env, ur5e, config)
 
 %% Define ops dictionary and Load Gazebo and obtain poses
   ops = dictionary();                % Type of global dictionary with all options to facilitate passing of options
@@ -8,8 +8,8 @@ function callObject(model_name, env, ur5e, config)
     ops("z_offset")            = 0.3;   % Vertical offset for top-down approach
     ops("traj_duration")       = 3;     % Traj duration (secs) 
 
-goHome('qr')
-resetWorld
+% goHome('qr')
+% resetWorld
 disp('Getting Robot and Object Pose...')
     type = 'gazebo';                            % type can be manual, gazebo, cam, ptcloud
     strcmp(type,'gazebo')                       % string compare  
@@ -131,8 +131,8 @@ end
 
 %% Attach Can to the end effector
 % Create can as a rigid body
-for j = 10:1:length(env)
-object_model = env{j};
+
+object_model = env{10};
 objectBody = rigidBody("myObject");
 objectJoint = rigidBodyJoint("objectJoint");
 
@@ -144,14 +144,14 @@ endEffectorPose = getTransform(ur5e,startConfig,"wrist_3_link");
 setFixedTransform(objectJoint,endEffectorPose\object_model.Pose); 
 
 % Add collision geometry to rigid body.
-addCollision(objectBody,object_name,inv(object_name.Pose));
+addCollision(objectBody,object_model,inv(object_model.Pose));
 objectBody.Joint = objectJoint;
 
 % Add rigid body to robot model.
 addBody(ur5e,objectBody,"wrist_3_link");
 
 % Remove object from environment.
-env(j) = [];
+env(10) = [];
 
 pause(2);
 
@@ -232,5 +232,4 @@ end
     end    
 %% Return to the ready Position for next object
 goHome('qr')
-end
 end
