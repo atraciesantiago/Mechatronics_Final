@@ -5,7 +5,7 @@ function callObjectLaying(model_name, env, ur5e, config)
     ops("debug")               = 0;     % If set to true visualize traj before running  
     ops("toolFlag")            = 0;     % Include rigidly attached robotiq fingers
     ops("traj_steps")          = 1;     % Num of traj steps
-    ops("z_offset")            = 0.3;   % Vertical offset for top-down approach
+    ops("z_offset")            = 0.325;   % Vertical offset for top-down approach
     ops("traj_duration")       = 3;     % Traj duration (secs) 
 
 % goHome('qr')
